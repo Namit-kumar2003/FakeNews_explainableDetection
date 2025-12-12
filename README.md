@@ -120,14 +120,38 @@ This project combines:
 ✔ Explainability with both Attention + LIME
 ✔ A clean, modular architecture
 
-flowchart TD
-
-A[Input News Text] --> B[DistilBERT Model<br>(Tokenization + Frozen Layers)]
-
-B --> C{Explainability Module}
-
-C --> D[Attention-Based Importance<br>- Extract CLS-attention<br>- Normalize]
-C --> E[LIME Word Importance<br>- Text perturbation<br>- Probability impact]
-C --> F[Combined Scoring<br>0.6*Attention + 0.4*LIME<br>Token Ranking]
-
-F --> G[Final Highlighted Output<br>(Most suspicious phrases)]
+                 ┌────────────────────────────┐
+                 │     Input News Text         │
+                 └──────────────┬─────────────┘
+                                │
+                                ▼
+          ┌────────────────────────────────────────┐
+          │         DistilBERT Model (Frozen)      │
+          │  - Tokenization (max_len = 64)         │
+          │  - Forward pass with attentions        │
+          └───────────────────┬────────────────────┘
+                              │
+          ┌───────────────────▼─────────────────────────────────┐
+          │                                                     │
+          │             Explainability Module                   │
+          │                                                     │
+          ├───────────────────────────────┬─────────────────────┤
+          │                               │                     │
+          ▼                               ▼                     ▼
+┌──────────────────┐            ┌────────────────────┐   ┌─────────────────────┐
+│ Attention-Based   │            │     LIME            │   │ Combined Scoring    │
+│ Importance        │            │ (Word Importance)   │   │ (0.6*Attn+0.4*LIME) │
+│ - Extract CLS →   │            │ - Perturb text      │   │ + Ranking + Sorting │
+│   token attention │            │ - Measure impact    │   └─────────────────────┘
+│ - Normalize 0..1  │            │ - Highlight words   │
+└───────────────────┘            └─────────────────────┘
+          │                               │
+          └───────────────┬───────────────┘
+                          │
+                          ▼
+                ┌──────────────────────┐
+                │ Final Highlighted     │
+                │   Text Output         │
+                │  (words ranked by     │
+                │  combined importance) │
+                └───────────────────────┘
